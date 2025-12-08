@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taley - Magische Geschichten für Kinder</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4ECDC4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Taley">
+  <meta name="description" content="Interaktive, KI-generierte Geschichten für Kinder mit Voice-First UX">
+
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      const errorDiv = document.createElement('div');
+      errorDiv.style.position = 'fixed';
+      errorDiv.style.top = '0';
+      errorDiv.style.left = '0';
+      errorDiv.style.width = '100%';
+      errorDiv.style.background = 'red';
+      errorDiv.style.color = 'white';
+      errorDiv.style.padding = '10px';
+      errorDiv.style.zIndex = '10000';
+      errorDiv.textContent = 'Global Error: ' + message + ' at ' + source + ':' + lineno;
+      document.body.appendChild(errorDiv);
+    };
+  </script>
+</head>
+
+<body>
+  <!-- Skip Links for Keyboard Navigation -->
+  <a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
+  <a href="#story-container" class="skip-link">Zur Geschichte springen</a>
+
+  <!-- Profile Selection Screen -->
+  <header class="app-header" id="main-content">
+    <div class="profile-menu" role="button" tabindex="0" aria-label="Profil öffnen">
+      <div class="profile-avatar">👤</div>
+      <div class="profile-name" id="header-profile-name">Gast</div>
+    </div>
+
+    <h1 class="app-title">
+      <img src="./logo.png" alt="Taley - Growing with Stories" class="app-logo">
+    </h1>
+
+    <div class="header-controls" role="navigation" aria-label="Hauptnavigation">
+      <div class="mode-toggle" id="mode-toggle" data-i18n="kidMode" role="button" tabindex="0"
+        aria-label="Kindermodus umschalten">Kindermodus</div>
+      <div class="mode-toggle" id="lang-toggle" data-i18n="langEN" role="button" tabindex="0"
+        aria-label="Sprache umschalten">EN</div>
+      <button id="settings-btn" class="mode-toggle" style="padding: 10px; font-size: 1.2em;"
+        aria-label="Einstellungen öffnen">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Experience & Level -->
+  <div class="experience-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+    aria-label="Erfahrungsleiste">
+    <div class="experience-progress" id="experience-progress"></div>
+    <div class="experience-text" id="experience-text">0 / 100 XP</div>
+  </div>
+
+  <div class="level-info" role="status" aria-label="Aktuelles und nächstes Level">
+    <div class="current-level">
+      <span class="level-icon">🏅</span>
+      <span id="current-level">Level 1</span>
+    </div>
+    <div class="next-level">
+      <span id="next-level">Level 2</span>
+      <span class="level-icon">🏅</span>
+    </div>
+  </div>
+
+  <!-- Level Map Toggle -->
+  <div class="level-map-toggle-header" id="level-map-toggle-header">
+    <h2 style="margin:0; font-size:1.2em; color:var(--secondary-color);" data-i18n="levelMapTitle">Deine
+      Abenteuer-Karte</h2>
+    <button id="toggle-level-map-btn" class="toggle-btn" aria-expanded="false"
+      style="background:none;border:none;font-size:1.2em;cursor:pointer;" aria-controls="level-map-container"
+      aria-label="Abenteuer-Karte ein-/ausblenden">▼</button>
+  </div>
+
+  <!-- Level Map Container -->
+  <div class="level-map-container" id="level-map-container" aria-hidden="true">
+    <div class="level-map" id="level-map" role="region" aria-label="Abenteuer-Karte">
+      <!-- Nodes injected via JS -->
+    </div>
+    <div id="unlock-info" style="text-align:center; margin-top:15px; font-weight:700; color:var(--text-light);"></div>
+  </div>
+
+  <!-- Search / Magic Input -->
+  <div class="search-bar" id="kid-search-bar" role="search">
+    <div class="search-container">
+      <label for="prompt-input" class="sr-only">Beschreibe deine Geschichte</label>
+      <input id="prompt-input" type="text" data-i18n-placeholder="searchPlaceholder"
+        placeholder="Sag oder tippe eine Idee..." aria-label="Beschreibe deine Geschichte"
+        aria-describedby="prompt-help">
+      <span id="prompt-help" class="sr-only">Gib ein, über welches Thema oder welchen Charakter die Geschichte sein
+        soll</span>
+      <button id="mic-btn" aria-label="Spracheingabe starten">🎤</button>
+      <button id="send-prompt" class="search-btn" aria-label="Geschichte generieren">➤</button>
+    </div>
+  </div>
+
+  <!-- Kid Mode Dashboard -->
+  <main class="kid-mode-dashboard" id="kid-mode-dashboard" role="main">
+    <div class="content-grid">
+
+      <!-- Magic Story Cards (Visual Input) -->
+      <section class="box story-cards-section" aria-labelledby="magic-cards-title">
+        <h2 class="box-title" id="magic-cards-title">
+          <span>✨</span> <span data-i18n="boxMagicCards">Magische Karten</span>
+        </h2>
+        <div class="story-cards-container" id="story-cards-container" role="group" aria-label="Magische Story-Karten">
+          <!-- Cards will be injected here or can be static -->
+          <div class="story-card" data-theme="Weltraum" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Weltraum">
+            <div class="card-icon">🚀</div>
+            <div class="card-label" data-i18n="cardSpace">Weltraum</div>
+          </div>
+          <div class="story-card" data-theme="Dinos" role="button" tabindex="0" aria-label="Geschichte zum Thema Dinos">
+            <div class="card-icon">🦖</div>
+            <div class="card-label" data-i18n="cardDino">Dinos</div>
+          </div>
+          <div class="story-card" data-theme="Prinzessin" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Prinzessin">
+            <div class="card-icon">👸</div>
+            <div class="card-label" data-i18n="cardPrincess">Prinzessin</div>
+          </div>
+          <div class="story-card" data-theme="Piraten" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Piraten">
+            <div class="card-icon">🏴‍☠️</div>
+            <div class="card-label" data-i18n="cardPirates">Piraten</div>
+          </div>
+          <div class="story-card" data-theme="Zauberwald" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Zauberwald">
+            <div class="card-icon">🌲</div>
+            <div class="card-label" data-i18n="cardForest">Zauberwald</div>
+          </div>
+          <div class="story-card" data-theme="Unterwasser" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Unterwasser">
+            <div class="card-icon">🐙</div>
+            <div class="card-label" data-i18n="cardUnderwater">Unterwasser</div>
+          </div>
+          <div class="story-card" data-theme="Superhelden" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Superhelden">
+            <div class="card-icon">🦸</div>
+            <div class="card-label" data-i18n="cardSuperhero">Superhelden</div>
+          </div>
+          <div class="story-card" data-theme="Roboter" role="button" tabindex="0"
+            aria-label="Geschichte zum Thema Roboter">
+            <div class="card-icon">🤖</div>
+            <div class="card-label" data-i18n="cardRobot">Roboter</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trends -->
+      <section class="box" aria-labelledby="trends-title">
+        <h2 class="box-title" id="trends-title">
+          <span>🔥</span> <span data-i18n="boxTrends">Trends</span>
+        </h2>
+        <div class="trends" role="group" aria-label="Aktuelle Trend-Geschichten">
+          <div class="trend-item" data-story="frozen" role="button" tabindex="0"
+            aria-label="Trend-Geschichte: Eiskönigin">
+            <span>❄️</span>
+            <span data-i18n="trendFrozen">Eiskönigin</span>
+          </div>
+          <div class="trend-item" data-story="superhero" role="button" tabindex="0"
+            aria-label="Trend-Geschichte: Superhelden">
+            <span>🦸</span>
+            <span data-i18n="trendSuperhero">Superhelden</span>
+          </div>
+          <div class="trend-item" data-story="space" role="button" tabindex="0" aria-label="Trend-Geschichte: Weltraum">
+            <span>🚀</span>
+            <span data-i18n="trendSpace">Weltraum</span>
+          </div>
+          <div class="trend-item" data-story="dino" role="button" tabindex="0" aria-label="Trend-Geschichte: Dinos">
+            <span>🦕</span>
+            <span data-i18n="trendDino">Dinos</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Magic Story Cards Section -->
+      <section class="magic-cards-section" id="magic-cards-section" aria-labelledby="magic-story-cards-title">
+        <h2 class="section-title" data-i18n="magicCards" id="magic-story-cards-title">🎴 Magische Story-Karten</h2>
+        <div class="magic-cards-grid" id="magic-cards-grid" role="group" aria-label="Verfügbare magische Story-Karten">
+          <!-- Magic cards injected via JS -->
+        </div>
+      </section>
+
+      <!-- Character Selection for Story -->
+      <section class="character-story-selection" id="character-story-selection"
+        aria-labelledby="character-story-panel-title">
+        <div class="character-story-panel">
+          <h3 class="panel-title" id="character-story-panel-title">Wer soll in deiner Geschichte mitspielen?</h3>
+          <p class="panel-subtitle">Wähle bis zu 3 Helden! 🌟</p>
+
+          <div class="character-grid" id="story-character-grid" role="group"
+            aria-label="Wähle Charaktere für deine Geschichte">
+            <!-- Characters will be injected here -->
+          </div>
+
+          <div class="selected-characters-display" id="selected-characters-display" role="status" aria-live="polite"
+            aria-label="Ausgewählte Charaktere">
+            <div class="selected-char-slot" id="slot-main" aria-label="Hauptheld">
+              <div class="slot-label">Held 1️⃣</div>
+              <div class="slot-content">?</div>
+            </div>
+            <div class="selected-char-slot" id="slot-side1" aria-label="Begleiter 2">
+              <div class="slot-label">Begleiter 2️⃣</div>
+              <div class="slot-content">?</div>
+            </div>
+            <div class="selected-char-slot" id="slot-side2" aria-label="Begleiter 3">
+              <div class="slot-label">Begleiter 3️⃣</div>
+              <div class="slot-content">?</div>
+            </div>
+          </div>
+
+          <button class="start-story-btn" id="start-story-btn"
+            aria-label="Geschichte mit ausgewählten Charakteren starten">
+            Geschichte starten! 🚀
+          </button>
+        </div>
+      </section>
+
+      <!-- My Stories -->
+      <section class="box" aria-labelledby="my-stories-title">
+        <h2 class="box-title" id="my-stories-title">
+          <span>📚</span> <span data-i18n="boxMyStories">Meine Geschichten</span>
+        </h2>
+        <div class="my-stories-list" id="my-stories-list" role="region"
+          aria-label="Liste deiner gespeicherten Geschichten">
+          <!-- Stories injected via JS -->
+        </div>
+      </section>
+
+      <!-- Knowledge -->
+      <section class="box" aria-labelledby="knowledge-box-title">
+        <h2 class="box-title" id="knowledge-box-title">
+          <span>💡</span> <span data-i18n="boxKnowledge">Wissensbox</span>
+        </h2>
+        <div class="my-stories-list" role="group" aria-label="Wissensgeschichten"> <!-- Reusing list style -->
+          <div class="story-item" data-story="rainbow" role="button" tabindex="0"
+            aria-label="Wissensgeschichte: Wie entsteht ein Regenbogen?">
+            <span>🌈</span>
+            <span data-i18n="storyRainbow">Wie entsteht ein Regenbogen?</span>
+          </div>
+          <div class="story-item" data-story="dinosaurs" role="button" tabindex="0"
+            aria-label="Wissensgeschichte: Warum sind Dinosaurier ausgestorben?">
+            <span>🦖</span>
+            <span data-i18n="storyDinosaurs">Warum sind Dinosaurier ausgestorben?</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Characters -->
+      <section class="box" aria-labelledby="characters-box-title">
+        <h2 class="box-title" id="characters-box-title">
+          <span>🎭</span> <span data-i18n="boxCharacters">Charaktere</span>
+        </h2>
+        <div class="character-selection-header">
+          <span data-i18n="selectCharacterPrompt">Wähle deinen Helden</span>
+          <button id="toggle-characters-btn" class="toggle-btn" aria-expanded="false"
+            style="background:none;border:none;" aria-controls="character-selection-grid"
+            aria-label="Charakterauswahl ein-/ausblenden">▼</button>
+        </div>
+        <div class="character-selection" id="character-selection-grid" aria-hidden="true" role="group"
+          aria-label="Verfügbare Charaktere">
+          <div class="character unlocked" data-character="Prinzessin" role="button" tabindex="0"
+            aria-label="Charakter Prinzessin"><span>👸</span><span data-i18n="charPrincess">Prinzessin</span></div>
+          <div class="character unlocked" data-character="Ritter" role="button" tabindex="0"
+            aria-label="Charakter Ritter"><span>🤺</span><span data-i18n="charKnight">Ritter</span></div>
+          <div class="character unlocked" data-character="Abenteurer" role="button" tabindex="0"
+            aria-label="Charakter Abenteurer"><span>🧭</span><span data-i18n="charAdventurer">Abenteurer</span></div>
+          <div class="character unlocked" data-character="Zauberer" role="button" tabindex="0"
+            aria-label="Charakter Zauberer"><span>🪄</span><span data-i18n="charWizard">Zauberer</span></div>
+          <div class="character locked" data-character="Adler" role="button" tabindex="0"
+            aria-label="Charakter Adler (gesperrt)"><span>🦅</span><span data-i18n="charEagle">Adler</span>
+          </div>
+          <div class="character locked" data-character="Einhorn" role="button" tabindex="0"
+            aria-label="Charakter Einhorn (gesperrt)"><span>🦄</span><span data-i18n="charUnicorn">Einhorn</span>
+          </div>
+          <div class="character locked" data-character="Teddy" role="button" tabindex="0"
+            aria-label="Charakter Teddy (gesperrt)"><span>🧸</span><span data-i18n="charTeddy">Teddy</span>
+          </div>
+          <div class="character locked" data-character="Fee" role="button" tabindex="0"
+            aria-label="Charakter Fee (gesperrt)"><span>🧚</span><span data-i18n="charFairy">Fee</span>
+          </div>
+          <div class="character locked" data-character="Entdecker" role="button" tabindex="0"
+            aria-label="Charakter Entdecker (gesperrt)"><span>🔎</span><span data-i18n="charExplorer">Entdecker</span>
+          </div>
+          <div class="character locked" data-character="Erfinder" role="button" tabindex="0"
+            aria-label="Charakter Erfinder (gesperrt)"><span>🛠️</span><span data-i18n="charInventor">Erfinder</span>
+          </div>
+          <div class="character locked" data-character="Träumer" role="button" tabindex="0"
+            aria-label="Charakter Träumer (gesperrt)"><span>🌙</span><span data-i18n="charDreamer">Träumer</span>
+          </div>
+          <div class="character locked" data-character="Gestaltwandler" role="button" tabindex="0"
+            aria-label="Charakter Gestaltwandler (gesperrt)"><span>🌀</span><span
+              data-i18n="charShapeshifter">Gestaltwandler</span></div>
+          <div class="character locked" data-character="Musiker" role="button" tabindex="0"
+            aria-label="Charakter Musiker (gesperrt)"><span>🎵</span><span data-i18n="charMusician">Musiker</span>
+          </div>
+          <div class="character locked" data-character="Künstler" role="button" tabindex="0"
+            aria-label="Charakter Künstler (gesperrt)"><span>🎨</span><span data-i18n="charArtist">Künstler</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Magic Wand Button -->
+  <button class="magic-wand" id="magic-wand" aria-label="Zauberstab: Generiere eine Geschichte">
+    <span>🪄</span>
+    <span data-i18n="magicWand">Zauber dir deine Geschichte</span>
+  </button>
+
+  <!-- Story Container -->
+  <article class="story-container" id="story-container" role="article" aria-live="polite"
+    aria-label="Generierte Geschichte">
+    <h2 class="story-title" id="story-title"></h2>
+    <div class="story-content" id="story-content" role="main" aria-label="Geschichtentext"></div>
+
+    <div class="story-choices" role="group" aria-label="Wähle wie die Geschichte weitergeht">
+      <button class="choice-btn" id="choice-1" aria-label="Erste Auswahlmöglichkeit"></button>
+      <button class="choice-btn" id="choice-2" aria-label="Zweite Auswahlmöglichkeit"></button>
+    </div>
+
+    <div class="story-actions" role="toolbar" aria-label="Geschichtenaktionen">
+      <!-- New Apple Music Style Audio Player -->
+      <div class="audio-player-card" id="audio-player-card" style="display:none;" role="region"
+        aria-label="Audio-Player">
+        <div class="audio-info">
+          <div class="audio-icon-wrapper">
+            <div class="audio-icon" id="audio-icon">📖</div>
+          </div>
+          <div class="audio-text">
+            <div class="audio-title" id="audio-player-title">Geschichte wird geladen...</div>
+            <div class="audio-subtitle">Taley Audio</div>
+          </div>
+        </div>
+
+        <div class="audio-progress-container">
+          <input type="range" class="audio-progress-bar" id="audio-progress" value="0" min="0" max="100" step="0.1"
+            aria-label="Audiowiedergabefortschritt">
+          <div class="audio-time">
+            <span class="current-time" id="audio-current-time">0:00</span>
+            <span class="duration" id="audio-duration">0:00</span>
+          </div>
+        </div>
+
+        <div class="audio-controls-main">
+          <button class="control-btn secondary" id="skip-back-btn" aria-label="10 Sekunden zurückspulen">⏪</button>
+          <button class="control-btn primary" id="play-pause-btn" aria-label="Wiedergabe starten/pausieren">▶️</button>
+          <button class="control-btn secondary" id="skip-forward-btn" aria-label="10 Sekunden vorspulen">⏩</button>
+        </div>
+
+        <div class="audio-extra-controls">
+          <select id="voice-select" class="mini-select" aria-label="Stimme auswählen"></select>
+          <div class="speed-control-wrapper">
+            <span style="font-size:0.8em;">Speed:</span>
+            <input type="range" id="speed-control" min="0.5" max="2" step="0.1" value="1" class="mini-range"
+              aria-label="Wiedergabegeschwindigkeit einstellen">
+          </div>
+        </div>
+      </div>
+      <!-- End Audio Player -->
+      <div style="display: flex; gap: 10px;">
+        <button class="story-action-btn" id="save-story" data-i18n="saveStory"
+          aria-label="Geschichte speichern">Speichern</button>
+        <button class="story-action-btn" id="new-story" data-i18n="newStory"
+          aria-label="Neue Geschichte starten">Neu</button>
+      </div>
+    </div>
+
+    <button class="download-btn" id="download-btn"
+      style="margin-top:20px; width:100%; background:var(--text-light); padding:10px; border-radius:10px; color:white; border:none; cursor:pointer;"
+      aria-label="Geschichte herunterladen">Geschichte
+      herunterladen</button>
+  </article>
+
+  <div class="xp-notification" id="xp-notification" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Parent Mode Dashboard -->
+  <div class="parent-mode-dashboard" id="parent-mode-dashboard" role="region" aria-label="Eltern-Dashboard">
+    <h2 style="color:var(--secondary-color); font-size: 2em;" data-i18n="parentDashboardTitle">Eltern-Dashboard</h2>
+
+    <!-- Info Section -->
+    <section class="parent-box parent-info-box" aria-labelledby="parent-info-title">
+      <h3 class="box-title" data-i18n="parentInfoTitle" id="parent-info-title">Warum Taley?</h3>
+      <div class="parent-info-section">
+        <h4 data-i18n="parentInfoUniqueTitle">Was macht Taley einzigartig?</h4>
+        <p data-i18n="parentInfoUniqueText">Taley nutzt KI...</p>
+      </div>
+      <div class="parent-info-section">
+        <h4 data-i18n="parentInfoImportanceTitle">Warum ist das wichtig?</h4>
+        <p data-i18n="parentInfoImportanceText">Kinder lernen am besten...</p>
+      </div>
+    </section>
+
+    <!-- Plans -->
+    <section class="parent-box" aria-labelledby="plans-title">
+      <h3 class="box-title" data-i18n="plansTitle" id="plans-title">Abonnements & Pläne</h3>
+      <p data-i18n="plansDescription">Verwalten Sie hier Ihre Premium-Pläne.</p>
+      <button class="story-action-btn" style="background:var(--primary-color);" data-i18n="purchaseButton"
+        aria-label="Upgrade auf Premium">Upgrade auf
+        Premium</button>
+    </section>
+
+    <!-- Learning Goals -->
+    <section class="parent-box" aria-labelledby="learning-goals-title">
+      <h3 class="box-title" data-i18n="learningTitle" id="learning-goals-title">Lernziele & Zeitplan</h3>
+      <p data-i18n="learningDescription">Geben Sie Themen oder Fähigkeiten ein.</p>
+      <textarea id="learning-input" placeholder="Aktuelle Lernziele..."
+        style="width:100%; min-height:80px; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:10px; font-family: inherit;"
+        aria-label="Lernziele eingeben"></textarea>
+      <button class="story-action-btn" id="save-goals-button" data-i18n="saveGoalsButton"
+        aria-label="Lernziele speichern">Lernziele speichern</button>
+    </section>
+
+    <!-- Doc Upload -->
+    <section class="parent-box" aria-labelledby="document-upload-title">
+      <h3 class="box-title" data-i18n="documentUploadTitle" id="document-upload-title">Dokumenten-Upload</h3>
+      <p data-i18n="documentUploadDescription">Laden Sie Dokumente hoch.</p>
+      <input type="file" id="parent-document-upload" accept=".pdf,.doc,.docx,.txt" style="margin-bottom: 10px;"
+        aria-label="Dokument zum Hochladen auswählen">
+      <button class="story-action-btn" id="upload-document-button" data-i18n="uploadDocumentButton"
+        aria-label="Dokument hochladen">Dokument
+        hochladen</button>
+      <div id="upload-status" style="margin-top:10px; font-size: 0.9em;" role="status" aria-live="polite"></div>
+      <div id="last-uploaded-doc" style="margin-top:5px; font-size: 0.85em; color: #555;" role="status"
+        aria-live="polite"></div>
+    </section>
+
+    <!-- Adult Generator -->
+    <section class="parent-box" aria-labelledby="adult-generator-title">
+      <h3 class="box-title" data-i18n="adultGeneratorTitle" id="adult-generator-title">Erzähl-Generator (Erwachsene)
+      </h3>
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <input id="parent-prompt-input" type="text" data-i18n-placeholder="adultSearchPlaceholder"
+          style="flex:1; padding:12px; border-radius:20px; border:1px solid #ccc;" aria-label="Erzählidee eingeben">
+        <button id="parent-send-prompt" class="story-action-btn" aria-label="Geschichte generieren">Generieren</button>
+      </div>
+
+      <div id="parent-story-output"
+        style="margin-top:15px; background:#f9f9f9; border-radius:10px; padding:20px; display:none;" role="region"
+        aria-label="Generierte Geschichte für Erwachsene">
+        <h4 id="parent-story-title" style="margin-top:0; color:var(--primary-color);"></h4>
+        <p id="parent-story-content" style="line-height:1.6;"></p>
+        <div id="parent-audio-controls" style="margin-top:15px; display:flex; align-items:center; gap:10px;">
+          <button class="audio-btn" id="parent-play-pause" aria-label="Hörbuch abspielen/pausieren">▶️</button>
+          <span id="parent-audio-status" data-i18n="audioPlay">Hörbuch abspielen</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay"
+    style="display:none; position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:10000; justify-content:center; align-items:center; flex-direction:column; gap:20px; backdrop-filter: blur(5px);"
+    role="alert" aria-live="assertive" aria-label="Ladevorgang">
+    <div class="loader-spinner"
+      style="border: 8px solid #f3f3f3; border-top: 8px solid var(--primary-color); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite;">
+    </div>
+    <p style="font-size:1.5em; font-weight:700; color:var(--primary-color);" data-i18n="generatingStory">Generiere
+      magische Geschichte...</p>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+    <div class="modal-content profile-modal-modern">
+      <h3 id="profile-modal-title" class="modal-title">Wähle deinen Helden</h3>
+
+      <!-- Age Selection (First Step) -->
+      <div class="age-selection-step" id="age-selection-step" role="group" aria-labelledby="age-question">
+        <p class="age-question" id="age-question">Wie alt bist du?</p>
+        <div class="age-buttons">
+          <button class="age-btn" data-age="3" aria-label="Alter 3 bis 5 Jahre">3-5</button>
+          <button class="age-btn" data-age="6" aria-label="Alter 6 bis 8 Jahre">6-8</button>
+          <button class="age-btn" data-age="9" aria-label="Alter 9 bis 12 Jahre">9-12</button>
+        </div>
+      </div>
+
+      <!-- Character Selection (Second Step) -->
+      <div class="character-selection-step" id="character-selection-step" style="display:none;" role="group"
+        aria-labelledby="character-selection-title">
+        <div class="character-carousel-container">
+          <button class="carousel-nav prev" id="carousel-prev">‹</button>
+          <div class="character-carousel" id="character-carousel">
+            <!-- Characters injected via JS -->
+          </div>
+          <button class="carousel-nav next" id="carousel-next">›</button>
+        </div>
+
+        <div class="character-name-display" id="character-name-display">Prinzessin</div>
+
+        <!-- Optional: Name Input (can be skipped) -->
+        <div class="form-group-simple">
+          <input id="profile-name" type="text" placeholder="Dein Name (optional)" class="form-input-simple">
+        </div>
+
+        <input id="profile-character" type="hidden" value="">
+        <input id="profile-age" type="hidden" value="">
+
+        <div class="modal-actions-simple">
+          <button id="profile-save" class="btn-save-large">Los geht's! 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999;">
+    <div
+      style="background:white; border-radius:20px; padding:24px; max-width:450px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+      <h3 style="margin-top:0; margin-bottom:16px; color:var(--primary-color);">Einstellungen</h3>
+
+      <label style="display:block; margin-bottom:8px; font-weight:700;">Gemini API Key (Text)</label>
+      <p style="font-size:0.85em; color:#666; margin-bottom:8px;">Für magische Geschichten.</p>
+      <input id="api-key-input" type="password" placeholder="AIzaSy..."
+        style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-bottom:16px; font-family:inherit;">
+
+      <label style="display:block; margin-bottom:8px; font-weight:700;">OpenAI API Key (Audio)</label>
+      <p style="font-size:0.85em; color:#666; margin-bottom:8px;">Optional: Für Premium-Stimmen (HD).</p>
+      <input id="openai-key-input" type="password" placeholder="sk-..."
+        style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-bottom:20px; font-family:inherit;">
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button id="settings-cancel"
+          style="background:#F1F2F6; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:700;">Abbrechen</button>
+        <button id="settings-save"
+          style="background:var(--secondary-color); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:700;">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts loaded in dependency order -->
+  <!-- Architecture Components (loaded first) -->
+  <script src="src/error-handler.js"></script>
+  <script src="src/event-bus.js"></script>
+  <script src="src/state-manager.js"></script>
+  <!-- API Clients -->
+  <script src="src/gemini-client.js"></script>
+  <!-- Utilities and Features -->
+  <script src="src/utils.js"></script>
+  <script src="src/toast.js"></script>
+  <script src="src/story_cache.js"></script>
+  <script src="src/taley_voice.js"></script>
+  <script src="src/i18n.js"></script>
+  <script src="src/profile.js"></script>
+  <script src="src/character_selector.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="./src/speech.js"></script>
+  <script src="./src/story_ai.js"></script>
+  <script src="./src/story_fallback.js"></script>
+  <script src="./src/story.js"></script>
+  <script src="./app.js"></script>
+</body>
+
+</html>
